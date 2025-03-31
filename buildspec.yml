@@ -25,7 +25,7 @@ phases:
       - echo "Writing image definition file..."
       - DOCKER_CONTAINER_NAME=spring_aws
       - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-      - echo "Container Name: $DOCKER_CONTAINER_NAME"
+      - echo $DOCKER_CONTAINER_NAME
       - echo "Printing imagedefinitions.json..."
       - cat imagedefinitions.json
 
