@@ -8,7 +8,8 @@ phases:
       - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 381491967989.dkr.ecr.eu-north-1.amazonaws.com
       - REPOSITORY_URI=381491967989.dkr.ecr.eu-north-1.amazonaws.com/spring_aws
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
-      - curl --insecure tcp://192.168.1.103:2375  # This will try to make a simple TCP connection to port 2375
+      - curl -I https://google.com || echo "No internet access!"
+      - curl -I https://github.com || echo "GitHub unreachable!"
   build:
     commands:
       - echo "BUILDING STARTED AT $(date)"
