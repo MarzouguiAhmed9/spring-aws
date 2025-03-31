@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo LOGGING INTO AMAZON ECR
+      - aws --version
+      - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 381491967989.dkr.ecr.eu-north-1.amazonaws.com
+      - REPOSITORY_URI=381491967989.dkr.ecr.eu-north-1.amazonaws.com/spring_aws
+      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+
+  build:
+    commands:
+      - echo "BUILDING STARTED AT $(date)"
+      - echo "Building the JAR file..."
+      - mvn clean install
+      - echo "BUILDING THE DOCKER IMAGE..."
+      - docker -H tcp://192.168.1.103:2375 build -t $REPOSITORY_URI:$IMAGE_TAG .
+
+  post_build:
+    commands:
+      - echo "BUILDING FINISHED AT $(date)"
+      - echo "Pushing to ECR repository..."
+      - docker -H tcp://192.168.1.103:2375 push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Writing image definition file..."
+      - DOCKER_CONTAINER_NAME=spring_aws
+      - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo "Container Name: $DOCKER_CONTAINER_NAME"
+      - echo "Printing imagedefinitions.json..."
+      - cat imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - target/springboot-aws.jar
