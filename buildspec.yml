@@ -1,32 +1,45 @@
 version: 0.2
 
 phases:
+  install:
+    commands:
+      - echo "Installing Java 17..."
+      - yum install -y java-17-amazon-corretto
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
+      - export PATH=$JAVA_HOME/bin:$PATH
+      - echo "Java version:"
+      - java -version
+      - echo "Installing Docker CLI..."
+      - yum install -y docker
+      - echo "Starting Docker service..."
+      - service docker start || echo "Docker service failed to start!"
+
   pre_build:
     commands:
-      - echo LOGGING INTO AMAZON ECR
+      - echo "Logging into Amazon ECR..."
       - aws --version
       - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 381491967989.dkr.ecr.eu-north-1.amazonaws.com
-      - REPOSITORY_URI=381491967989.dkr.ecr.eu-north-1.amazonaws.com/spring_aws
-      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+      - export REPOSITORY_URI=381491967989.dkr.ecr.eu-north-1.amazonaws.com/spring_aws
+      - export IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+      - echo "Checking internet connectivity..."
       - curl -I https://google.com || echo "No internet access!"
       - curl -I https://github.com || echo "GitHub unreachable!"
+
   build:
     commands:
       - echo "BUILDING STARTED AT $(date)"
-      - echo "Building the JAR file..."
+      - echo "Building the JAR file with Maven..."
       - mvn clean install
-      - echo "BUILDING THE DOCKER IMAGE..."
-      - docker -H tcp://192.168.1.103:2375 build -t $REPOSITORY_URI:$IMAGE_TAG .
+      - echo "BUILD SUCCESSFUL, CREATING DOCKER IMAGE..."
+      - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
 
   post_build:
     commands:
       - echo "BUILDING FINISHED AT $(date)"
       - echo "Pushing to ECR repository..."
-      - docker -H tcp://192.168.1.103:2375 push $REPOSITORY_URI:$IMAGE_TAG
-      - echo "Writing image definition file..."
-      - DOCKER_CONTAINER_NAME=spring_aws
-      - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-      - echo $DOCKER_CONTAINER_NAME
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Creating image definition file..."
+      - printf '[{"name":"spring_aws","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
       - echo "Printing imagedefinitions.json..."
       - cat imagedefinitions.json
 
