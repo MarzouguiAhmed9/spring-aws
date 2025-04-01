@@ -50,6 +50,3 @@ artifacts:
   files:
     - imagedefinitions.json
     - target/springboot-aws.jar
-
-
-#/fff
