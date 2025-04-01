@@ -9,6 +9,7 @@ phases:
       - export PATH=$JAVA_HOME/bin:$PATH
       - echo "Java version:"
       - java -version
+      - echo "JAVA_HOME: $JAVA_HOME"
       - echo "Installing Docker CLI..."
       - yum install -y docker
       - echo "Starting Docker service..."
@@ -29,6 +30,8 @@ phases:
     commands:
       - echo "BUILDING STARTED AT $(date)"
       - echo "Building the JAR file with Maven..."
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
+      - export PATH=$JAVA_HOME/bin:$PATH
       - mvn clean install
       - echo "BUILD SUCCESSFUL, CREATING DOCKER IMAGE..."
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
